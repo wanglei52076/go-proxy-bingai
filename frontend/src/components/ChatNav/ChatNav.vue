@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { h, ref, onMounted, inject, defineComponent, render } from 'vue';
-import { NDropdown, type DropdownOption, NModal, NInput, NInputNumber, NButton, NGrid, NGridItem, useMessage, NImage, NForm, NFormItem, NSwitch, NTag, NSelect, NSpin, NP, NA, NConfigProvider, lightTheme, darkTheme, useOsTheme, type GlobalTheme } from 'naive-ui';
+import { NDropdown, type DropdownOption, NModal, NInput, NInputNumber, NButton, NGrid, NGridItem, useMessage, NImage, NForm, NFormItem, NSwitch, NTag, NSelect, NSpin, NP, NA, NConfigProvider, NSpace, NRadio, NRadioGroup, NTooltip, NIcon, lightTheme, darkTheme, useOsTheme, type GlobalTheme } from 'naive-ui';
 import conversationCssText from '@/assets/css/conversation.css?raw';
 import settingSvgUrl from '@/assets/img/setting.svg?url';
 import { usePromptStore } from '@/stores/modules/prompt';
@@ -33,20 +33,23 @@ const { isShowChatServiceSelectModal } = storeToRefs(chatStore);
 const userStore = useUserStore();
 const localVersion = __APP_INFO__.version;
 const lastVersion = ref('加载中...');
-const { historyEnable, themeMode, uiVersion, fullCookiesEnable, cookiesStr, enterpriseEnable, customChatNum, gpt4tEnable, sydneyEnable, sydneyPrompt, passServer } = storeToRefs(userStore);
+const { historyEnable, themeMode, uiVersion, langRegion, autoReopenMic, fullCookiesEnable, cookiesStr, enterpriseEnable, copilotProEnable, customChatNum, gpt4tEnable, sydneyEnable, sydneyPrompt, passServer } = storeToRefs(userStore);
 
 let cookiesEnable = ref(false);
 let cookies = ref('');
 let history = ref(true);
 let themeModeSetting = ref('auto');
 let uiVersionSetting = ref('v3');
+let langRegionSetting = ref('CN');
 let theme = ref(inject('theme'));
+let autoReopenMicSetting = ref(true);
 
 let settingIconStyle = ref({
   filter: 'invert(70%)',
 })
 let passingCFChallenge = ref(false);
 const enterpriseSetting = ref(false);
+const copilotProSetting = ref(false);
 const customChatNumSetting = ref(0);
 const gpt4tSetting = ref(true);
 const sydneySetting = ref(false);
@@ -54,6 +57,42 @@ const sydneyPromptSetting = ref('');
 const passServerSetting = ref('');
 const getCookieTip = ref('获取 Cookie 中, 请稍后...');
 const bingUrl = base58Decode('7RYHpA38gs3NAby2mkvoRMwjncBpS');
+
+const oneKeyLogin = ref('false');
+const loginTypeOptions = ref([
+  {
+    label: '账号登录',
+    value: 'false',
+  },
+  {
+    label: '一键登录',
+    value: 'true',
+  }
+]);
+const msLoginAccount = ref('');
+const msLoginPassword = ref('');
+const msLoginType = ref('passwd');
+const msLoginCode = ref('');
+const msLogining = ref(false);
+const msContinueing = ref(false);
+const msLoginTypeOptions = ref([
+{
+    label: '密码登录',
+    value: 'passwd',
+  },
+  {
+    label: '邮箱验证码登录',
+    value: 'email',
+  },
+  {
+    label: '2FA登录',
+    value: 'device',
+  }
+])
+const msLoginContext = ref({
+  cookies: '',
+  context: {}
+});
 
 const GetLastVersion = async () => {
   const res = await fetch('https://api.github.com/repos/Harry-zklcdc/go-proxy-bingai/releases/latest');
@@ -127,6 +166,17 @@ const uiVersionOptions = ref([
   }
 ]);
 
+const langRegionOptions = ref([
+  {
+    label: '中文优先',
+    value: 'CN',
+  },
+  {
+    label: '英文优先',
+    value: 'US',
+  }
+]);
+
 onMounted(() => {
   if (themeMode.value == 'light') {
     settingIconStyle.value = { filter: 'invert(0%)' }
@@ -195,7 +245,6 @@ const handleSelect = async (key: string) => {
       {
         CIB.showNotebook();
         const galileoIndex = CIB.config.sydney.request.optionsSets.indexOf('galileo');
-        console.log(galileoIndex)
         if (galileoIndex > -1) {
           CIB.config.sydney.request.optionsSets[galileoIndex] = 'clgalileo';
         }
@@ -206,8 +255,10 @@ const handleSelect = async (key: string) => {
         };
         await sleep(25);
         const serpEle = document.querySelector('cib-serp');
-        const disclaimer = serpEle?.shadowRoot?.querySelector('cib-ai-disclaimer') as HTMLElement;
-        disclaimer?.shadowRoot?.querySelector('.disclaimer')?.remove();
+        const notebook = serpEle?.shadowRoot?.querySelector('cib-notebook');
+        const disclaimer = notebook?.shadowRoot?.querySelector('cib-ai-disclaimer');
+        disclaimer?.shadowRoot?.querySelector('div')?.remove();
+        disclaimer?.shadowRoot?.querySelector('div')?.remove();
       }
       break;
     case navType.setting:
@@ -288,9 +339,12 @@ const settingMenu = (key: string) => {
         history.value = historyEnable.value;
         themeModeSetting.value = themeMode.value;
         uiVersionSetting.value = uiVersion.value;
+        langRegionSetting.value = langRegion.value;
+        copilotProSetting.value = copilotProEnable.value;
         enterpriseSetting.value = enterpriseEnable.value;
         customChatNumSetting.value = customChatNum.value;
         gpt4tSetting.value = gpt4tEnable.value;
+        autoReopenMicSetting.value = autoReopenMic.value;
         sydneySetting.value = sydneyEnable.value;
         sydneyPromptSetting.value = sydneyPrompt.value;
         passServerSetting.value = passServer.value;
@@ -344,13 +398,19 @@ const saveAdvancedSetting = () => {
   const tmpEnterpris = enterpriseEnable.value;
   enterpriseEnable.value = enterpriseSetting.value;
   customChatNum.value = customChatNumSetting.value;
-  const tmpGpt4t = gpt4tEnable.value, tmpSydney = sydneyEnable.value, tmpuiVersion = uiVersion.value;
+  const tmpGpt4t = gpt4tEnable.value, tmpSydney = sydneyEnable.value, tmpuiVersion = uiVersion.value, tmpCopilotPro = copilotProEnable.value;
+  copilotProEnable.value = copilotProSetting.value;
   gpt4tEnable.value = gpt4tSetting.value;
+  autoReopenMic.value = autoReopenMicSetting.value;
   sydneyEnable.value = sydneySetting.value;
   sydneyPrompt.value = sydneyPromptSetting.value;
   uiVersion.value = uiVersionSetting.value;
   if (passServerSetting.value && passServerSetting.value.startsWith('http')) {
     userStore.setPassServer(passServerSetting.value)
+  }
+  if (langRegion.value != langRegionSetting.value) {
+    langRegion.value = langRegionSetting.value;
+    _G.Region = langRegionSetting.value;
   }
 
   const serpEle = document.querySelector('cib-serp');
@@ -359,14 +419,14 @@ const saveAdvancedSetting = () => {
   const threadsContainer = sidepanel?.querySelector('.threads-container') as HTMLElement;
   if (!isMobile()) {
     if (history.value && userStore.getUserToken() && !enterpriseEnable.value) {
-      if (tmpuiVersion === 'v2') {
-        threadsHeader.style.display = 'flex'
-        threadsContainer.style.display = 'block'
-      } else {
+      if (tmpuiVersion === 'v1') {
         CIB.vm.sidePanel.panels = [
           { type: 'threads', label: '最近的活动' },
           { type: 'plugins', label: '插件' }
         ]
+      } else {
+        threadsHeader.style.display = 'flex'
+        threadsContainer.style.display = 'block'
       }
     } else {
       if (tmpuiVersion === 'v2') {
@@ -402,7 +462,7 @@ const saveAdvancedSetting = () => {
     }
   }
   isShowAdvancedSettingModal.value = false;
-  if (tmpEnterpris != enterpriseSetting.value || tmpSydney != sydneySetting.value || tmpGpt4t != gpt4tSetting.value || tmpuiVersion != uiVersionSetting.value) {
+  if (tmpEnterpris != enterpriseSetting.value || tmpSydney != sydneySetting.value || tmpGpt4t != gpt4tSetting.value || tmpuiVersion != uiVersionSetting.value || tmpCopilotPro != copilotProSetting.value) {
     window.location.href = '/';
   }
 }
@@ -437,6 +497,186 @@ const loginHandel = async ()=> {
     IG: _G.IG,
     T: await aesEncrypt(e, _G.IG),
   }, '*');
+}
+
+const msLoginHandel = async () => {
+  msLogining.value = true;
+  switch (msLoginType.value) {
+    case 'passwd':
+      {
+        if (!msLoginAccount.value) {
+          message.warning('请先填入账号');
+          msLogining.value = false;
+          break;
+        } else if (!msLoginPassword.value) {
+          message.warning('请先填入密码');
+          msLogining.value = false;
+          break;
+        }
+        const res = await fetch('/api/ms/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            account: msLoginAccount.value,
+            password: msLoginPassword.value,
+            type: msLoginType.value,
+          })
+        })
+        if (!res.ok) {
+          message.error('登录失败, 请重试');
+          msLogining.value = false;
+          break;
+        }
+        message.success('登录成功');
+        isShowLoginModal.value = false;
+        const resData = await res.json();
+        userStore.saveCookies(resData.data.cookies);
+        cookiesStr.value = resData.data.cookies;
+        fullCookiesEnable.value = true;
+        window.location.href = '/';
+      }
+      break;
+    case 'email':
+      {
+        if (!msLoginAccount.value) {
+          message.warning('请先填入账号');
+          msLogining.value = false;
+          break;
+        }
+        const res = await fetch('/api/ms/login', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            account: msLoginAccount.value,
+            type: msLoginType.value,
+            verify_code: msLoginCode.value,
+            cookies: msLoginContext.value.cookies,
+            context: msLoginContext.value.context,
+          }),
+        })
+        if (!res.ok) {
+          message.error('登录失败, 请重试');
+          msLogining.value = false;
+          break;
+        }
+        message.success('登录成功');
+        isShowLoginModal.value = false;
+        const resData = await res.json();
+        userStore.saveCookies(resData.data.cookies);
+        cookiesStr.value = resData.data.cookies;
+        fullCookiesEnable.value = true;
+        window.location.href = '/';
+      }
+      break;
+    case 'device':
+      {
+        if (!msLoginAccount.value) {
+          message.warning('请先填入账号');
+          msLogining.value = true;
+          break;
+        }
+        const res = await fetch('/api/ms/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            account: msLoginAccount.value,
+            type: msLoginType.value,
+          })
+        })
+        const resData = await res.json();
+        if (res.status != 201) {
+          message.error('获取2FA失败, 请重试');
+          msLogining.value = false;
+          break;
+        }
+        message.success('获取2FA成功, 请在手机上查看并输入验证码');
+        msLoginCode.value = resData.data.code;
+        msLoginContext.value.cookies = resData.data.cookies;
+        msLoginContext.value.context = resData.data.context;
+        await msLoginContinueHandel();
+      }
+      break;
+    default:
+      msLogining.value = false;
+      break;
+  }
+}
+
+const msLoginContinueHandel = async () => {
+  msContinueing.value = true;
+  switch (msLoginType.value) {
+    case 'email':
+      {
+        if (!msLoginAccount.value) {
+          message.warning('请先填入账号');
+          msLogining.value = true;
+          break;
+        }
+        const res = await fetch('/api/ms/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            account: msLoginAccount.value,
+            type: msLoginType.value,
+          })
+        })
+        if (res.status != 201) {
+          message.error('获取邮箱验证码失败, 请重试');
+          msContinueing.value = false;
+          break;
+        }
+        message.success('获取邮箱验证码成功, 请检查邮箱');
+        msContinueing.value = false;
+        const resData = await res.json();
+        msLoginContext.value.cookies = resData.data.cookies;
+        msLoginContext.value.context = resData.data.context;
+      }
+      break;
+    case 'device':
+      {
+        if (!msLoginAccount.value) {
+          message.warning('请先填入账号');
+          msLogining.value = true;
+          break;
+        }
+        const res = await fetch('/api/ms/login', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            account: msLoginAccount.value,
+            type: msLoginType.value,
+            cookies: msLoginContext.value.cookies,
+            context: msLoginContext.value.context,
+          }),
+        })
+        if (!res.ok) {
+          message.error('获取2FA失败, 请重试');
+          msLogining.value = false;
+          break;
+        }
+        message.success('登录成功');
+        isShowLoginModal.value = false;
+        const resData = await res.json();
+        userStore.saveCookies(resData.data.cookies);
+        cookiesStr.value = resData.data.cookies;
+        fullCookiesEnable.value = true;
+        window.location.href = '/';
+      }
+      break;
+    default:
+      msContinueing.value = false;
+      break;
+  }
 }
 
 const authorEleRender = () => {
@@ -504,21 +744,46 @@ const autoPassCFChallenge = async () => {
     <template #header>
       <div class="text-3xl py-2">账号登录</div>
     </template>
-    <div v-if="!isShowIframe" style="margin-top:12px; margin-bottom:24px">
-      <NP>
-        使用此功能前, 请先安装<NA href="https://www.tampermonkey.net/">油猴插件</NA>, 并安装<NA href="https://greasyfork.org/zh-CN/scripts/487409-go-proxy-bingai">此脚本</NA>
-        <br>
-        请点击下面「打开登录页面」按钮, 在新打开登录页面中登录账号, 登录成功后点击确定
-      </NP>
+    <NSelect v-model:value="oneKeyLogin" :options="loginTypeOptions" size="large" placeholder="选择登录方式" />
+    <div v-if="oneKeyLogin == 'true'">
+      <div v-if="!isShowIframe" style="margin-top:12px; margin-bottom:24px">
+        <NP>
+          使用此功能前, 请先安装<NA href="https://www.tampermonkey.net/">油猴插件</NA>, 并安装<NA href="https://greasyfork.org/zh-CN/scripts/487409-go-proxy-bingai">此脚本</NA>
+          <br>
+          请点击下面「打开登录页面」按钮, 在新打开登录页面中登录账号, 登录成功后点击确定
+        </NP>
+      </div>
+      <div v-else>
+        <NSpin size="large" :description="getCookieTip" style="margin: 0 auto; width: 100%" />
+        <iframe id="login" :src="bingUrl" style="border: none; width: 0; height: 0" />
+      </div>
     </div>
     <div v-else>
-      <NSpin size="large" :description="getCookieTip" style="margin: 0 auto; width: 100%" />
-      <iframe id="login" :src="bingUrl" style="border: none; width: 0; height: 0" />
+      <NForm ref="formRef" label-placement="left" label-width="auto" require-mark-placement="right-hanging" style="margin-top: 16px;">
+        <NFormItem path="cookiesEnable" label="登录方式">
+          <NRadioGroup v-model:value="msLoginType">
+            <NSpace vertical>
+              <NRadio v-for="item in msLoginTypeOptions" size="large" :key="item.value" :value="item.value">{{ item.label }}</NRadio>
+            </NSpace>
+          </NRadioGroup>
+        </NFormItem>
+        <NFormItem path="account" label="账号">
+          <NInput size="large" v-model:value="msLoginAccount" type="text" placeholder="账号" />
+        </NFormItem>
+        <NFormItem v-show="msLoginType === 'passwd'" path="password" label=" 密码">
+          <NInput size="large" v-model:value="msLoginPassword" type="password" show-password-on="click" placeholder="密码" />
+        </NFormItem>
+        <NFormItem v-show="msLoginType !== 'passwd'" path="verify_code" label="验证码">
+          <NInput size="large" v-model:value="msLoginCode" type="text" placeholder="验证码" :disabled="msLoginType === 'device'" />
+        </NFormItem>
+      </NForm>
     </div>
     <template #action>
-      <NButton size="large" type="info" @click="newWindow">打开登录页面</NButton>
-      <NButton size="large" @click="isShowLoginModal = false">取消</NButton>
-      <NButton ghost size="large" type="info" @click="loginHandel">确定</NButton>
+      <NButton v-show="oneKeyLogin == 'true'" size="large" type="info" @click="newWindow">打开登录页面</NButton>
+      <NButton v-show="oneKeyLogin == 'true'" size="large" @click="isShowLoginModal = false">取消</NButton>
+      <NButton v-show="oneKeyLogin == 'true'" ghost size="large" type="info" @click="loginHandel">确定</NButton>
+      <NButton v-show="oneKeyLogin != 'true' && msLoginType === 'email'" size="large" type="info" :loading="msContinueing" @click="msLoginContinueHandel">获取邮箱验证码</NButton>
+      <NButton v-show="oneKeyLogin != 'true'" ghost size="large" type="info" :loading="msLogining" @click="msLoginHandel">确定</NButton>
     </template>
   </NModal>
   <NModal v-model:show="isShowSettingModal" preset="dialog" :show-icon="false">
@@ -529,7 +794,12 @@ const autoPassCFChallenge = async () => {
       <NGrid x-gap="0" :cols="2">
         <NGridItem>
           <NFormItem path="cookiesEnable" label="自动人机验证">
-            <NButton type="info" :loading="passingCFChallenge" @click="settingMenu('autoPassCFChallenge')">启动</NButton>
+            <NTooltip>
+              <template #trigger>
+                <NButton type="info" :loading="passingCFChallenge" @click="settingMenu('autoPassCFChallenge')">启动</NButton>
+              </template>
+              旧版本的人机验证, 现已完全自动代理通过
+            </NTooltip>
           </NFormItem>
         </NGridItem>
         <NGridItem>
@@ -610,7 +880,39 @@ const autoPassCFChallenge = async () => {
           </NFormItem>
         </NGridItem>
         <NGridItem>
-          <NFormItem path="gpt4tEnable" label="GPT4 Turbo">
+          <NFormItem path="copilotProEnable">
+            <template #label>
+              Copilot Pro
+              <NTooltip trigger="hover">
+                <template #trigger>
+                  <NIcon size="14" style="top: 2px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><path d="M256 56C145.72 56 56 145.72 56 256s89.72 200 200 200s200-89.72 200-200S366.28 56 256 56zm0 82a26 26 0 1 1-26 26a26 26 0 0 1 26-26zm64 226H200v-32h44v-88h-32v-32h64v120h44z" fill="currentColor"></path></svg>
+                  </NIcon>
+                </template>
+                如果有 Copilot Pro 的账号, 可开启此选项
+              </NTooltip>
+            </template>
+            <NSwitch v-model:value="copilotProSetting" />
+          </NFormItem>
+        </NGridItem>
+        <NGridItem>
+          <NFormItem path="sydneyEnable" label="连续语音对话">
+            <NSwitch v-model:value="autoReopenMicSetting" />
+          </NFormItem>
+        </NGridItem>
+        <NGridItem>
+          <NFormItem path="gpt4tEnable">
+            <template #label>
+              Copilot 增强
+              <NTooltip trigger="hover" :style="{ maxWidth: '240px' }">
+                <template #trigger>
+                  <NIcon size="14" style="top: 2px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><path d="M256 56C145.72 56 56 145.72 56 256s89.72 200 200 200s200-89.72 200-200S366.28 56 256 56zm0 82a26 26 0 1 1-26 26a26 26 0 0 1 26-26zm64 226H200v-32h44v-88h-32v-32h64v120h44z" fill="currentColor"></path></svg>
+                  </NIcon>
+                </template>
+                增强 Microsoft Copilot 的能力, 有可能会导致一些问题
+              </NTooltip>
+            </template>
             <NSwitch v-model:value="gpt4tSetting" />
           </NFormItem>
         </NGridItem>
@@ -620,6 +922,9 @@ const autoPassCFChallenge = async () => {
           </NFormItem>
         </NGridItem>
       </NGrid>
+      <NFormItem path="langRegion" label="语言理解能力">
+        <NSelect v-model:value="langRegionSetting" :options="langRegionOptions" size="large" placeholder="语言理解能力" />
+      </NFormItem>
       <NFormItem path="sydneyPrompt" label="人机验证服务器">
         <NInput size="large" v-model:value="passServerSetting" type="text" placeholder="人机验证服务器" />
       </NFormItem>

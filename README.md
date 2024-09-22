@@ -10,7 +10,7 @@
 
 一键部署, 国内可用, 无需登录即可畅聊
 
-![Golang](https://img.shields.io/badge/Golang-1.21.6-blue?style=flat-square&logo=go) ![Vue3](https://img.shields.io/badge/Vue-3.3.2-green?style=flat-square&logo=vue.js)
+![Golang](https://img.shields.io/badge/Golang-1.22.1-blue?style=flat-square&logo=go) ![Vue3](https://img.shields.io/badge/Vue-3.3.2-green?style=flat-square&logo=vue.js)
 
 ![GitHub stars](https://img.shields.io/github/stars/Harry-zklcdc/go-proxy-bingai.svg?style=flat-square&label=Stars&logo=github) ![GitHub forks](https://img.shields.io/github/forks/Harry-zklcdc/go-proxy-bingai.svg?style=flat-square&label=Forks&logo=github) ![Release](https://img.shields.io/github/v/release/Harry-zklcdc/go-proxy-bingai.svg?style=flat-square&label=Release&logo=github&color=light-green)
 
@@ -42,17 +42,25 @@
 
 ### BingAI 本体
 
+> #### Cloudflare Worker 部署
+>
+> [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Harry-zklcdc/go-proxy-bingai)
+
 > #### Vercel 部署
 >
 > [![Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FHarry-zklcdc%2Fgo-proxy-bingai&env=BYPASS_SERVER&project-name=go-proxy-bingai&repository-name=go-proxy-bingai)
 
+> #### Zeabur 部署
+>
+> [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/ZBA4SF)
+
+> #### Glitch 部署
+>
+> [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](https://glitch.com/edit/#!/import/github/Harry-zklcdc/go-proxy-bingai-glitch)
+
 > #### Replit 部署
 >
 > [![Run on Repl.it](https://img.shields.io/badge/Run_on_Repl.it-grey?logo=replit&size=large)](https://repl.it/github/Harry-zklcdc/go-proxy-bingai)
-
-> #### Cloudflare Worker 部署
->
-> [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://github.com/Harry-zklcdc/go-proxy-bingai/wiki/Cloudflare-Worker-%E9%83%A8%E7%BD%B2)
 
 ### 人机验证服务器
 
@@ -70,9 +78,11 @@
 
 ✅ 支持现有开源 ChatGPT 提示词库
 
-✅ 一键登录 (需配合[油猴脚本使用](https://greasyfork.org/zh-CN/scripts/487409-go-proxy-bingai))
+✅ 一键登录
 
 ✅ 登录账号支持画图
+
+✅ 支持侧边栏聊天和撰写 - [Chrome插件](https://github.com/Harry-zklcdc/bingai-sidebar-chrome)
 
 ✅ 支持 OpenAI 格式 API 调用 - [📝 Wiki文档](https://github.com/Harry-zklcdc/go-proxy-bingai/wiki/BingAPI)
 

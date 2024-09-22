@@ -1,8 +1,8 @@
 package api
 
 import (
-	"adams549659584/go-proxy-bingai/api/helper"
 	"adams549659584/go-proxy-bingai/common"
+	"adams549659584/go-proxy-bingai/common/helper"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -79,7 +79,7 @@ func BypassHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp, status, err := binglib.Bypass(bypassServer, strings.Join(reqCookies, "; "), "local-gen-"+hex.NewUUID(), request.IG, "", "", request.T)
+	resp, status, err := binglib.Bypass(bypassServer, strings.Join(reqCookies, "; "), "local-gen-"+hex.NewUUID(), request.IG, "", "", request.T, r.Host)
 	if err != nil {
 		helper.ErrorResult(w, http.StatusInternalServerError, err.Error())
 		common.Logger.Error("Bypass Error: %v", err)
